@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:background="#333366"
+              android:orientation="horizontal">
+
+    <Button
+        android:id="@+id/cycle"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:text="单曲循环"
+        android:textColor="#fff"/>
+
+    <ImageButton
+        android:id="@+id/last_one"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="0dp"
+        android:src="@drawable/last_one"/>
+
+    <ImageButton
+        android:id="@+id/start_or_pause_or_stop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="0dp"
+        android:src="@drawable/start"/>
+
+    <ImageButton
+        android:id="@+id/next_one"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="0dp"
+        android:src="@drawable/next_one"/>
+
+</LinearLayout>
