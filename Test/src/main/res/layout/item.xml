@@ -1,24 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="wrap_content">
+
+    <!--
+        <com.flower.test.Myhorizontalscrollview
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
                 android:orientation="horizontal">
 
-    <TextView
-        android:id="@+id/item_singer_and_song_name"
-        android:layout_width="wrap_content"
+                <LinearLayout
+                    android:id="@+id/lll"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/item_singer_and_song_name"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentLeft="true"
+                        android:text="歌曲名字"
+                        android:textSize="22sp"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="20dp"
+                        android:layout_below="@id/item_singer_and_song_name"
+                        android:textSize="22sp"/>
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/delete"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:text="delete"/>
+            </LinearLayout>
+        </com.flower.test.Myhorizontalscrollview>
+    -->
+    <LinearLayout
+        android:id="@+id/lll"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:text="歌曲名字"
-        android:textSize="22sp"/>
+        android:orientation="vertical">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="20dp"
-        android:layout_below="@id/item_singer_and_song_name"
-        android:textSize="22sp"/>
+        <TextView
+            android:id="@+id/item_singer_and_song_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:text="歌曲名字"
+            android:textSize="22sp"/>
 
-
-
-
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:layout_below="@id/item_singer_and_song_name"
+            android:textSize="22sp"/>
+    </LinearLayout>
 </RelativeLayout>

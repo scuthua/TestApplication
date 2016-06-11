@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import java.util.List;
@@ -40,14 +41,15 @@ public class MyAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHolder holder;
-        if (convertView == null) {
-            holder = new ViewHolder();
-            convertView = LayoutInflater.from(context).inflate(R.layout.item, null);
-            holder.textView = (TextView) convertView.findViewById(R.id.item_singer_and_song_name);
-            convertView.setBackgroundResource(R.drawable.convertview);
-            convertView.setTag(holder);
-        } else {
-            holder = (ViewHolder) convertView.getTag();
+            if (convertView == null) {
+                holder = new ViewHolder();
+                convertView = LayoutInflater.from(context).inflate(R.layout.item, null);
+                holder.textView = (TextView) convertView.findViewById(R.id.item_singer_and_song_name);
+//            holder.button = (Button) convertView.findViewById(R.id.delete);
+                convertView.setBackgroundResource(R.drawable.convertview);
+                convertView.setTag(holder);
+            } else {
+                holder = (ViewHolder) convertView.getTag();
 
         }
         holder.textView.setText(songs.get(position));
@@ -55,5 +57,6 @@ public class MyAdapter extends BaseAdapter {
     }
     class ViewHolder {
         TextView textView;
+        Button button;
     }
 }

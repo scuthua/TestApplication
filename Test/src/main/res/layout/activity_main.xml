@@ -9,7 +9,10 @@
 
     <include layout="@layout/top"/>
 
-
+    <TextView
+        android:layout_width="wrap_content"
+        android:textStyle=""
+        android:layout_height="wrap_content"/>
     <com.flower.test.LrcView
         android:id="@+id/lyrics"
         android:layout_width="match_parent"
