@@ -17,6 +17,7 @@ import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.flower.test.ActivityControl;
 import com.flower.test.MyActivity;
@@ -33,6 +34,8 @@ import java.util.Map;
 public class SongListActivity extends MyActivity implements AdapterView.OnItemClickListener, View
         .OnClickListener {
 
+
+    private boolean onePressed = false;
     private TextView MenuSinger, MenuSongName, loadingText;
     private LinearLayout SingerAndSong;
     private ProgressBar progressBar;
@@ -200,11 +203,28 @@ public class SongListActivity extends MyActivity implements AdapterView.OnItemCl
         startActivity(intent);
     }
 
+    /**
+     * 这里通过延时的方法实现了点击两次back键退出应用。方法来自于网上。
+     * 就是设置一个是否点击已经一次的flag onePressed（默认false）。判断这个onePressed是否没false。
+     * 第一次点击时设置成true，第二次再点击就退出了。同时在第一次点击的时候发出一个延时的操作，让几秒后
+     * onePressed设置成false，这样子就算我们只点击了一下，隔段时间后第二次点击还是会提醒我们，而不是直接退出。
+     */
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
-        ActivityControl.removeAll();
-        MainActivity.mediaPlayer.release();
+        if (!onePressed) {
+            onePressed = true;
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    onePressed = false;
+                }
+            }, 2000);
+            Toast.makeText(SongListActivity.this, "再点击一次退出应用", Toast.LENGTH_SHORT).show();
+        } else {
+            ActivityControl.removeAll();
+            MainActivity.mediaPlayer.release();
+        }
+
     }
 
     @Override
