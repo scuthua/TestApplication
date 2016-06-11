@@ -1,5 +1,6 @@
 package com.flower.test;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
@@ -20,6 +21,13 @@ import android.widget.RelativeLayout;
  * Created by flower on 2016/3/26.
  */
 public class MylistView extends ListView {
+    /*
+    左滑模式LEFT_SLIDE是0，右滑模式是RIGHT_SLIDE，其他的数字都是左右滑动都有。
+    这里slideMode是int，默认值是0即默认模式是左滑。
+     */
+    public static int LEFT_SLIDE = 0;
+    public static int RIGHT_SLIDE = 1;
+    private int slideMode;
     private Context context;
     private int selectedItem;
     private int previousPositionX;
@@ -58,6 +66,13 @@ public class MylistView extends ListView {
         mScreenWidth = outMetris.widthPixels;
     }
 
+    /*
+    client通过设置setSlideMode决定滑动模式
+     */
+    public void setSlideMode(int slideMode) {
+        this.slideMode = slideMode;
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
         int presentPositionX;
@@ -83,7 +98,7 @@ public class MylistView extends ListView {
                 super.onTouchEvent(ev);
                 break;
             case MotionEvent.ACTION_MOVE:
-                SlideAdd(ev);
+                SlideAdd(ev, slideMode);
                 super.onTouchEvent(ev);
                 break;
             case MotionEvent.ACTION_UP:
@@ -97,30 +112,20 @@ public class MylistView extends ListView {
                     super.onTouchEvent(ev);
                 }
         }
+        /*
+        这里需要返回true，三种动作都是通过这里返回数值的，如果是false，就会在down结束后不再执行move和up，
+        返回false就是告诉上层的VIewGroup这个事件我们不处理或者处理不了，这样down后事件就不会再分发给MylistView了。
+         */
         return true;
     }
-    private void SlideAdd(MotionEvent ev) {
-    /*
-    当界面上没有button并且滑动大于30的时候才开始处理button的显示
-     */
+
+
+    private void SlideAdd(MotionEvent ev, int slideMode) {
+        /*
+        当界面上没有button并且滑动大于30的时候才开始处理button的显示
+         */
         if (!isDeleteShow && Math.abs(ev.getX() - previousPositionX) > 30) {
-            btn = LayoutInflater.from(getContext()).inflate(R.layout.btn, null);
-            btn.setOnClickListener(new OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    viewGroup.removeView(btn);
-                    isDeleteShow = false;
-                    btn = null;
-                    onItemDeleteListener.onItemDelete(selectedItem);
-                }
-            });
-            viewGroup = (ViewGroup) getChildAt(selectedItem - getFirstVisiblePosition());
-            params = new RelativeLayout.LayoutParams(ViewGroup
-                    .LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            params.addRule(RelativeLayout.CENTER_VERTICAL);
-            btn.setLayoutParams(params);
-            viewGroup.addView(btn);
-            isDeleteShow = true;
+            addButton();
         }
         /*
         通过mScreenWidth 和滑动的距离设置btn的margin。动态设置margin是通过params设置的，这点和padding不一样
@@ -128,23 +133,59 @@ public class MylistView extends ListView {
          */
         if (Math.abs(ev.getX() - previousPositionX) > 30 && Math.abs(ev.getX() -
                 previousPositionX) < 300) {
-            if (ev.getX() - previousPositionX < 0) {
-                int left = (int) (mScreenWidth + ev.getX() - previousPositionX);
-                params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-                params.setMarginStart(left);
-                params.setMarginEnd(0);
-                btn.setLayoutParams(params);
-            } else {
-                /*
-                set的方法在左右滑动的时候会被覆盖，但是add的方法不会，所以这里需要removeRule
-                 */
-                int right=(int) (mScreenWidth - (ev.getX() - previousPositionX));
-                params.removeRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-                params.setMarginEnd(right);
-                params.setMarginStart(0);
-                btn.setLayoutParams(params);
+            /*
+             这里通过判断模式是不是右滑决定是否调用lefeSlideProcess，可以这样写是因为三种模式中只有右滑模式
+             是不处理这个左滑操作的，所以只用判断是不是右滑就可以了，不用去判断是左滑还是左右滑动。
+             */
+            if (ev.getX() - previousPositionX < 0 && slideMode != RIGHT_SLIDE) {
+                leftSlideProcess(ev);
+             /*
+             这里的判断和左滑的一个道理。
+             */
+            } else if (ev.getX() - previousPositionX > 0 && slideMode != LEFT_SLIDE) {
+                rightSlideProcess(ev);
             }
         }
+
+    }
+
+    private void addButton() {
+        btn = LayoutInflater.from(getContext()).inflate(R.layout.btn, null);
+        btn.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                viewGroup.removeView(btn);
+                isDeleteShow = false;
+                btn = null;
+                onItemDeleteListener.onItemDelete(selectedItem);
+            }
+        });
+        viewGroup = (ViewGroup) getChildAt(selectedItem - getFirstVisiblePosition());
+        params = new RelativeLayout.LayoutParams(ViewGroup
+                .LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.addRule(RelativeLayout.CENTER_VERTICAL);
+        btn.setLayoutParams(params);
+        viewGroup.addView(btn);
+        isDeleteShow = true;
+    }
+
+    private void leftSlideProcess(MotionEvent ev) {
+        int left = (int) (mScreenWidth + ev.getX() - previousPositionX);
+        params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        params.setMarginStart(left);
+        params.setMarginEnd(0);
+        btn.setLayoutParams(params);
+    }
+
+    private void rightSlideProcess(MotionEvent ev) {
+    /*
+    set的方法在左右滑动的时候会被覆盖，但是add的方法不会，所以这里需要removeRule
+     */
+        int right = (int) (mScreenWidth - (ev.getX() - previousPositionX));
+        params.removeRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        params.setMarginEnd(right);
+        params.setMarginStart(0);
+        btn.setLayoutParams(params);
     }
 
     /**
