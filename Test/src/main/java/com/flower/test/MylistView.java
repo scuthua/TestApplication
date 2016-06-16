@@ -1,19 +1,14 @@
 package com.flower.test;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.util.Log;
-import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.AnimationUtils;
-import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 
@@ -21,13 +16,13 @@ import android.widget.RelativeLayout;
  * Created by flower on 2016/3/26.
  */
 public class MylistView extends ListView {
-    /*
-    左滑模式LEFT_SLIDE是0，右滑模式是RIGHT_SLIDE，其他的数字都是左右滑动都有。
-    这里slideMode是int，默认值是0即默认模式是左滑。
+    /**
+     * 左滑模式LEFT_SLIDE是0，右滑模式是RIGHT_SLIDE，其他的数字都是左右滑动都有。
+     * 这里slideMode是int，默认值是0即默认模式是左滑。
      */
     public static int LEFT_SLIDE = 0;
     public static int RIGHT_SLIDE = 1;
-    private int slideMode;
+    private int slideMode = 0;
     private Context context;
     private int selectedItem;
     private int previousPositionX;
@@ -66,8 +61,8 @@ public class MylistView extends ListView {
         mScreenWidth = outMetris.widthPixels;
     }
 
-    /*
-    client通过设置setSlideMode决定滑动模式
+    /**
+     * client通过设置setSlideMode决定滑动模式
      */
     public void setSlideMode(int slideMode) {
         this.slideMode = slideMode;
@@ -78,8 +73,8 @@ public class MylistView extends ListView {
         int presentPositionX;
         switch (ev.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                /*
-                判断当前按下的item和之前的是不是一样
+                /**
+                 *判断当前按下的item和之前的是不是一样
                  */
                 int temp = selectedItem;
                 selectedItem = pointToPosition((int) ev.getX(), (int) ev.getY());
@@ -88,8 +83,8 @@ public class MylistView extends ListView {
                 } else {
                     selcetedItemChange = false;
                 }
-                /*
-                当选择了不同的item要将已经显示的btn隐藏删除
+                /**
+                 *当选择了不同的item要将已经显示的btn隐藏删除
                  */
                 if (selcetedItemChange && btn != null) {
                     btnHide(btn);
@@ -103,45 +98,46 @@ public class MylistView extends ListView {
                 break;
             case MotionEvent.ACTION_UP:
                 presentPositionX = (int) ev.getX();
-                /*
-                当我们点击的还是原来的item但不是在btn上，我们应该让btn消失。当滑动太小的时候也让button消失
+                /**
+                 *当我们点击的还是原来的item但不是在btn上，我们应该让btn消失。当滑动太小的时候也让button消失
                  */
                 if (isDeleteShow && (Math.abs(presentPositionX - previousPositionX) < 100)) {
                     btnHide(btn);
+                } else if (isDeleteShow && (Math.abs(presentPositionX - previousPositionX) > 100)) {
+                    btnShow(btn, presentPositionX);
                 } else {
                     super.onTouchEvent(ev);
                 }
         }
-        /*
-        这里需要返回true，三种动作都是通过这里返回数值的，如果是false，就会在down结束后不再执行move和up，
-        返回false就是告诉上层的VIewGroup这个事件我们不处理或者处理不了，这样down后事件就不会再分发给MylistView了。
+        /**
+         *这里需要返回true，三种动作都是通过这里返回数值的，如果是false，就会在down结束后不再执行move和up，
+         *返回false就是告诉上层的VIewGroup这个事件我们不处理或者处理不了，这样down后事件就不会再分发给MylistView了。
          */
         return true;
     }
 
 
     private void SlideAdd(MotionEvent ev, int slideMode) {
-        /*
-        当界面上没有button并且滑动大于30的时候才开始处理button的显示
+        /**
+         *当界面上没有button并且滑动大于30的时候才开始处理button的显示
          */
         if (!isDeleteShow && Math.abs(ev.getX() - previousPositionX) > 30) {
             addButton();
         }
-        /*
-        通过mScreenWidth 和滑动的距离设置btn的margin。动态设置margin是通过params设置的，这点和padding不一样
-        设置滑动距离小于300是为了不让button离开有边界太远，这是是我自己的情况，不一定适用于所有设备。
+        /**
+         *通过mScreenWidth 和滑动的距离设置btn的margin。动态设置margin是通过params设置的，这点和padding不一样
+         *设置滑动距离小于200是为了不让button离开有边界太远，这是是我自己的情况，不一定适用于所有设备。
          */
-        if (Math.abs(ev.getX() - previousPositionX) > 30 && Math.abs(ev.getX() -
-                previousPositionX) < 300) {
-            /*
-             这里通过判断模式是不是右滑决定是否调用lefeSlideProcess，可以这样写是因为三种模式中只有右滑模式
-             是不处理这个左滑操作的，所以只用判断是不是右滑就可以了，不用去判断是左滑还是左右滑动。
+        if (isDeleteShow && Math.abs(ev.getX() - previousPositionX) < 200) {
+            /**
+             *这里通过判断模式是不是右滑决定是否调用lefeSlideProcess，可以这样写是因为三种模式中只有右滑模式
+             *是不处理这个左滑操作的，所以只用判断是不是右滑就可以了，不用去判断是左滑还是左右滑动。
              */
             if (ev.getX() - previousPositionX < 0 && slideMode != RIGHT_SLIDE) {
                 leftSlideProcess(ev);
-             /*
-             这里的判断和左滑的一个道理。
-             */
+                /**
+                 *这里的判断和左滑的一个道理。
+                 */
             } else if (ev.getX() - previousPositionX > 0 && slideMode != LEFT_SLIDE) {
                 rightSlideProcess(ev);
             }
@@ -149,6 +145,10 @@ public class MylistView extends ListView {
 
     }
 
+    /**
+     * 修复一个小bug，当左滑模式下，我们右滑会有button出现。
+     * 给button添加了一个marginStart=mScreenWidth，这样button生成了也不会出现在界面上。
+     */
     private void addButton() {
         btn = LayoutInflater.from(getContext()).inflate(R.layout.btn, null);
         btn.setOnClickListener(new OnClickListener() {
@@ -165,27 +165,22 @@ public class MylistView extends ListView {
                 .LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         params.addRule(RelativeLayout.CENTER_VERTICAL);
         btn.setLayoutParams(params);
+        btn.setTranslationX(mScreenWidth);
         viewGroup.addView(btn);
         isDeleteShow = true;
     }
 
+    /**
+     * 说实在的这里可以用margin来设置大小，当我用margin做侧滑栏时就不可以，
+     *
+     * @param ev
+     */
     private void leftSlideProcess(MotionEvent ev) {
-        int left = (int) (mScreenWidth + ev.getX() - previousPositionX);
-        params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-        params.setMarginStart(left);
-        params.setMarginEnd(0);
-        btn.setLayoutParams(params);
+        btn.setTranslationX(mScreenWidth + ev.getX() - previousPositionX);
     }
 
     private void rightSlideProcess(MotionEvent ev) {
-    /*
-    set的方法在左右滑动的时候会被覆盖，但是add的方法不会，所以这里需要removeRule
-     */
-        int right = (int) (mScreenWidth - (ev.getX() - previousPositionX));
-        params.removeRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-        params.setMarginEnd(right);
-        params.setMarginStart(0);
-        btn.setLayoutParams(params);
+        btn.setTranslationX(ev.getX() - previousPositionX);
     }
 
     /**
@@ -200,8 +195,17 @@ public class MylistView extends ListView {
     }
 
 
-    private void btnShow(View v) {
-        v.startAnimation(AnimationUtils.loadAnimation(getContext(), R.anim.btn_show));
+    private void btnShow(View v, int presentPositionX) {
+//        v.startAnimation(AnimationUtils.loadAnimation(getContext(), R.anim.btn_show));
+        /**
+         * 进入该方法的条件是buttonShow，并且滑动大于100.
+         * 这里判断滑动模式是为了避免在左滑模式下，右滑抬起时会直接出现button的情况。
+         */
+        if (slideMode != RIGHT_SLIDE & presentPositionX < previousPositionX) {
+            btn.setTranslationX(mScreenWidth - 200);
+        } else if (slideMode != LEFT_SLIDE & presentPositionX > previousPositionX) {
+            btn.setTranslationX(0);
+        }
     }
 
     private void btnHide(View v) {

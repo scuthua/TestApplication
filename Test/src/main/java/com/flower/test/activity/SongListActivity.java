@@ -1,5 +1,7 @@
 package com.flower.test.activity;
 
+import android.animation.ObjectAnimator;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -7,15 +9,19 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
-import android.view.LayoutInflater;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
+import android.view.WindowManager;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.PopupWindow;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,12 +30,16 @@ import com.flower.test.MyActivity;
 import com.flower.test.MyAdapter;
 import com.flower.test.MylistView;
 import com.flower.test.R;
+import com.nineoldandroids.view.ViewHelper;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.security.auth.login.LoginException;
+
 
 public class SongListActivity extends MyActivity implements AdapterView.OnItemClickListener, View
         .OnClickListener {
@@ -38,13 +48,18 @@ public class SongListActivity extends MyActivity implements AdapterView.OnItemCl
     private boolean onePressed = false;
     private TextView MenuSinger, MenuSongName, loadingText;
     private LinearLayout SingerAndSong;
+    private RelativeLayout leftMenuParent;
+    private RelativeLayout leftMenu;
+    private RelativeLayout.LayoutParams leftMenuParams;
+    private RelativeLayout loadAgain;
     private ProgressBar progressBar;
     private ImageButton MenuStartOrPause;
-    private ImageButton menuSettings;
+    private Button hideLeftMenu;
+    private Toolbar toolbar;
     private MylistView mylistView;
     private List<String> songs;
+    public static int mScreenWidth;
     private int position;
-    private int topHeight;
     private MyAdapter adapter;
     private Map<String, String> map;
     private Handler handler = new Handler(new Handler.Callback() {
@@ -64,15 +79,14 @@ public class SongListActivity extends MyActivity implements AdapterView.OnItemCl
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.songlistactivity);
-
+        setContentView(R.layout.content_activitiy);
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.setTitle("我的歌单");
+        setSupportActionBar(toolbar);
         songs = new ArrayList<>();
         map = new HashMap<>();
         initView();
-        initOther();
         if (!PreferenceManager.getDefaultSharedPreferences(this).getBoolean("have_load", false)) {
             progressBar.setVisibility(View.VISIBLE);
             loadingText.setVisibility(View.VISIBLE);
@@ -98,6 +112,108 @@ public class SongListActivity extends MyActivity implements AdapterView.OnItemCl
 
     }
 
+    // TODO: 2016/6/12 leftMenu没有在屏幕的外面，而是出现在了界面中，原因不详
+    private void initView() {
+        SingerAndSong = (LinearLayout) findViewById(R.id.menu_botton_layout);
+        SingerAndSong.setOnClickListener(this);
+        MenuSinger = (TextView) findViewById(R.id.menu_singer);
+        MenuSongName = (TextView) findViewById(R.id.menu_song_name);
+        MenuStartOrPause = (ImageButton) findViewById(R.id.menu_start_or_pause);
+        MenuStartOrPause.setOnClickListener(this);
+        mylistView = (MylistView) findViewById(R.id.list_view);
+        progressBar = (ProgressBar) findViewById(R.id.progress_bar);
+        loadingText = (TextView) findViewById(R.id.loading);
+        if (getIntent().getBooleanExtra("come_from_main_activity", false)) {
+            MenuSinger.setText(PreferenceManager.getDefaultSharedPreferences(this).getString
+                    ("singer", null));
+            MenuSongName.setText(PreferenceManager.getDefaultSharedPreferences(this).getString
+                    ("song_name", null));
+        }
+        if (MainActivity.mediaPlayer.isPlaying()) {
+            MenuStartOrPause.setImageResource(R.drawable.pause);
+        } else {
+            MenuStartOrPause.setImageResource(R.drawable.start);
+        }
+        /**
+         *这里分别设置了隐藏按钮、左侧菜单、以及菜单中按钮的初始化。还计算了屏幕宽度。
+         */
+        hideLeftMenu = (Button) findViewById(R.id.hide_left_menu);
+        hideLeftMenu.setOnClickListener(this);
+        leftMenu = (RelativeLayout) findViewById(R.id.left_menu);
+        WindowManager windowManager = (WindowManager) this.getSystemService(Context
+                .WINDOW_SERVICE);
+        DisplayMetrics outMetrics = new DisplayMetrics();
+        windowManager.getDefaultDisplay().getMetrics(outMetrics);
+        mScreenWidth = outMetrics.widthPixels;
+        leftMenuParams = new RelativeLayout.LayoutParams(mScreenWidth * 2 / 3, ViewGroup
+                .LayoutParams.MATCH_PARENT);
+        leftMenu.setLayoutParams(leftMenuParams);
+        leftMenuParent = (RelativeLayout) findViewById(R.id.left_menu_parent);
+        leftMenuParent.setTranslationX(-mScreenWidth);
+        loadAgain = (RelativeLayout) leftMenu.findViewById(R.id.load_again);
+        loadAgain.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mylistView.setVisibility(View.INVISIBLE);
+                progressBar.setVisibility(View.VISIBLE);
+                loadingText.setVisibility(View.VISIBLE);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        loading(Environment.getExternalStorageDirectory().getPath());
+                        loading("/storage/sdcard1");
+                        Message msg = new Message();
+                        msg.what = 1;
+                        handler.sendMessage(msg);
+                    }
+                }).start();
+                leftMenuClickHide();
+            }
+        });
+        toolbar.setNavigationIcon(R.mipmap.ic_launcher);
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                leftMenuClickShow();
+            }
+        });
+    }
+
+    /**
+     * 点击使leftMenu出现
+     */
+    private void leftMenuClickShow() {
+        ObjectAnimator animator = ObjectAnimator.ofFloat(leftMenuParent, "translationX",
+                -mScreenWidth, 0f);
+        animator.setDuration(1000);
+        animator.start();
+    }
+
+    /**
+     * 滑动使leftMenu出现
+     */
+    private void leftMenuSlideShow() {
+
+    }
+
+    /**
+     * 点击使leftMenu消失
+     */
+    private void leftMenuClickHide() {
+        ObjectAnimator animator = ObjectAnimator.ofFloat(leftMenu, "translationX", 0f,
+                -mScreenWidth);
+        animator.setDuration(1000);
+        animator.start();
+    }
+
+    /**
+     * 滑动使leftMenu消失
+     */
+    private void leftMenuSlideHide() {
+
+    }
+
+
     private void setSongNameAndSinger() {
         String fileName = songs.get(position);
         String[] name = fileName.split("\\.mp3")[0].split("-");
@@ -109,7 +225,6 @@ public class SongListActivity extends MyActivity implements AdapterView.OnItemCl
             MenuSinger.setText("未知歌手");
         }
     }
-
 
     private void setAdapterForList() {
         adapter = new MyAdapter(this, R.layout.item, songs);
@@ -147,35 +262,6 @@ public class SongListActivity extends MyActivity implements AdapterView.OnItemCl
                 }
             }
         }
-    }
-
-    private void initView() {
-        SingerAndSong = (LinearLayout) findViewById(R.id.menu_botton_layout);
-        SingerAndSong.setOnClickListener(this);
-        MenuSinger = (TextView) findViewById(R.id.menu_singer);
-        MenuSongName = (TextView) findViewById(R.id.menu_song_name);
-        MenuStartOrPause = (ImageButton) findViewById(R.id.menu_start_or_pause);
-        MenuStartOrPause.setOnClickListener(this);
-        menuSettings = (ImageButton) findViewById(R.id.menu_settings);
-        menuSettings.setOnClickListener(this);
-        mylistView = (MylistView) findViewById(R.id.list_view);
-        progressBar = (ProgressBar) findViewById(R.id.progress_bar);
-        loadingText = (TextView) findViewById(R.id.loading);
-        if (getIntent().getBooleanExtra("come_from_main_activity", false)) {
-            MenuSinger.setText(PreferenceManager.getDefaultSharedPreferences(this).getString
-                    ("singer", null));
-            MenuSongName.setText(PreferenceManager.getDefaultSharedPreferences(this).getString
-                    ("song_name", null));
-        }
-        if (MainActivity.mediaPlayer.isPlaying()) {
-            MenuStartOrPause.setImageResource(R.drawable.pause);
-        } else {
-            MenuStartOrPause.setImageResource(R.drawable.start);
-        }
-    }
-
-    private void initOther() {
-        topHeight = menuSettings.getHeight();
     }
 
 
@@ -262,36 +348,8 @@ public class SongListActivity extends MyActivity implements AdapterView.OnItemCl
                     startActivity(intent);
                 }
                 break;
-            case R.id.menu_settings:
-
-                final PopupWindow popupWindow = new PopupWindow(SongListActivity.this);
-                View view = LayoutInflater.from(SongListActivity.this).inflate(R.layout
-                        .menu_settings_popup_view, null);
-                TextView loadAgain = (TextView) view.findViewById(R.id.load_again);
-                loadAgain.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        mylistView.setVisibility(View.INVISIBLE);
-                        progressBar.setVisibility(View.VISIBLE);
-                        loadingText.setVisibility(View.VISIBLE);
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                loading(Environment.getExternalStorageDirectory().getPath());
-                                loading("/storage/sdcard1");
-                                Message msg = new Message();
-                                msg.what = 1;
-                                handler.sendMessage(msg);
-                            }
-                        }).start();
-                        popupWindow.dismiss();
-                    }
-                });
-                popupWindow.setContentView(view);
-                popupWindow.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
-                popupWindow.setWidth(ViewGroup.LayoutParams.WRAP_CONTENT);
-                popupWindow.setFocusable(true);
-                popupWindow.showAsDropDown(menuSettings);
+            case R.id.hide_left_menu:
+                leftMenuClickHide();
                 break;
         }
 

@@ -16,7 +16,7 @@ import java.util.Collections;
  * Created by flower on 2016/3/27.
  */
 public class FrontCoverActivity extends Activity {
-    public static int COVER_DISPLAY_TIME=2000;
+    public static int COVER_DISPLAY_TIME=1000;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
